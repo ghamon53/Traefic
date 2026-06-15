@@ -10,25 +10,21 @@ jobs:
     runs-on: self-hosted
 
     steps:
+      name: Deploy Traefik Local
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
       - name: Checkout du code
         uses: actions/checkout@v4
 
-      - name: Copier le fichier docker-compose sur la VM
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          source: "docker-compose.yml"
-          target: "~/traefik-deploy/"
-
-      - name: Déployer l'application via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd ~/traefik-deploy/
-            docker compose down --remove-orphans
-            docker compose up -d
+      - name: Déployer l'application localement
+        run: |
+          docker compose down
+          docker compose up -d
