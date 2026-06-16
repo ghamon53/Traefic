@@ -9,9 +9,11 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.apacheport.address=:8080" # Ajout d'un entrypoint pour le port 8080
     ports:
-      - "80:80"
-      - "8081:8081"
+      - "80:80"       # Port de test principal
+      - "8080:8080"   # Port dédié à Apache pour l'exercice
+      - "8081:8081"   # Interface Web de Traefik (Optionnel)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
@@ -22,11 +24,13 @@ services:
     container_name: apache-server
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.apache.rule=Host(`localhost`) && Port(`8080`)"
+      # On associe le routeur d'Apache à l'entrypoint du port 8080
+      - "traefik.http.routers.apache.entrypoints=apacheport"
+      - "traefik.http.routers.apache.rule=PathPrefix(`/`)"
       - "traefik.http.services.apache.loadbalancer.server.port=80"
     networks:
       - web
 
 networks:
   web:
-    external: false  
+    external: false

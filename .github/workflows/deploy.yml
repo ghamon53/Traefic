@@ -7,35 +7,31 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    # IMPORTANT : On indique à GitHub d'utiliser votre runner local et non un serveur cloud GitHub
+    runs-on: self-hosted
 
     steps:
-      - name: Connexion au dépôt
+      - name: Connexion au dépôt (Récupère le code sur la VM)
         uses: actions/checkout@v4
 
-      - name: Configuration de la clé SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-
-      - name: Déploiement sur la VM Debian via SSH
+      - name: Déploiement local de Traefik via Docker Compose
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/traefik-deploy"
-          scp -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/traefik-deploy/docker-compose.yml
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
-            cd ~/traefik-deploy
-            docker compose down --remove-orphans
-            docker compose up -d
-          "
+          # Le runner est déjà dans le dossier de travail, on lance directement Docker
+          docker compose down --remove-orphans
+          docker compose up -d
 
-      - name: Tester dans la pipeline si Traefik répond sur le port 80
+      - name: Tester en local si Traefik répond sur le port 80
         run: |
           echo "Attente du démarrage de Traefik..."
           sleep 5
-          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.SSH_HOST }}:80)
+          
+          # Test en local direct (localhost) vu que le runner est sur la VM
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:80)
+          
           echo "Code de réponse reçu : $STATUS_CODE"
+          
           if [ "$STATUS_CODE" -eq 404 ] || [ "$STATUS_CODE" -eq 200 ]; then
-            echo "Test réussi : Traefik est bien accessible sur le port 80."
+            echo "Test réussi : Traefik est bien accessible localement sur le port 80."
           else
             echo "Erreur : Traefik ne répond pas (Code: $STATUS_CODE)."
             exit 1
