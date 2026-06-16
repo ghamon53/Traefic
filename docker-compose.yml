@@ -9,6 +9,7 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80" # Entrypoint 80 uniquement
+      - "--entrypoints.traefik.address=:8081"
     ports:
       - "80:80"       # Port de test pour la pipeline
       - "8081:8081"   # Interface Web de Traefik (Optionnel)
