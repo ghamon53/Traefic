@@ -8,11 +8,9 @@ services:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.apacheport.address=:8080" # Ajout d'un entrypoint pour le port 8080
+      - "--entrypoints.web.address=:80" # Entrypoint 80 uniquement
     ports:
-      - "80:80"       # Port de test principal
-      - "8080:8080"   # Port dédié à Apache pour l'exercice
+      - "80:80"       # Port de test pour la pipeline
       - "8081:8081"   # Interface Web de Traefik (Optionnel)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -22,10 +20,11 @@ services:
   apache-test:
     image: httpd:latest
     container_name: apache-server
+    ports:
+      - "8080:80"     # Apache répond directement sur le port 8080 de la VM !
     labels:
       - "traefik.enable=true"
-      # On associe le routeur d'Apache à l'entrypoint du port 8080
-      - "traefik.http.routers.apache.entrypoints=apacheport"
+      - "traefik.http.routers.apache.entrypoints=web"
       - "traefik.http.routers.apache.rule=PathPrefix(`/`)"
       - "traefik.http.services.apache.loadbalancer.server.port=80"
     networks:
